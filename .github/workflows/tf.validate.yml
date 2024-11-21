@@ -5,28 +5,26 @@ on:
   pull_request:
     branches: [ "main" ]
 
-
+env:
+  MY_USER: ${{ vars.USER }}
+  MY_PASS: ${{ secrets.PASS }}
+  MY_DB: ${{ vars.DB }}
 jobs:
   terraform_test:
     name: 'Terraform Test'
     runs-on: ubuntu-latest
-
-    defaults:
-      run:
-        shell: bash
-
     steps:
-    # Checkout the repository to the GitHub Actions runner
-    - name: Checkout
-      uses: actions/checkout@v3
-
-    # Install the latest version of Terraform CLI and configure the Terraform CLI configuration file with a Terraform Cloud user API token
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v1
-      
-
-    # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
-    - name: Echo commands
-      run: echo "hello world!"
+    - name: Setup Postgres
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y postgresql postgresql-contrib -y
+        sleep 10
+        sudo systemctl start postgresql.service
+    - name: Create db
+      run : |
+        sudo su postgres <<EOF
+        createdb ${{ vars.DB }}
+        psql -c "CREATE ROLE ${{ vars.USER }} WITH LOGIN PASSWORD '${{ secrets.PASSWORD}}';"
+        EOF
   
   
